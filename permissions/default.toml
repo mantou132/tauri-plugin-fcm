@@ -8,6 +8,7 @@ permissions = [
     "allow-delete-token",
     "allow-create-channel",
     "allow-send-notification",
+    "allow-take-opened-notification",
     "allow-register-listener",
     "allow-remove-listener",
 ]

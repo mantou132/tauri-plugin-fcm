@@ -22,13 +22,28 @@ struct SendNotificationArgs: Decodable {
   let channelId: String?
 }
 
+struct OpenedNotification: Encodable {
+  /// Omitted when no notification was tapped since the last take.
+  let data: [String: String]?
+}
+
 class FcmPlugin: Plugin, MessagingDelegate, UNUserNotificationCenterDelegate {
 
   private let tokenBuffer = TokenBuffer()
   let errorBuffer = RegistrationErrorBuffer()
   private weak var previousNotificationDelegate: UNUserNotificationCenterDelegate?
+  /// Data of the last tapped notification, kept until JS takes it.
+  private var openedNotification: [String: String]?
 
   // MARK: - Lifecycle
+
+  override init() {
+    super.init()
+    // Set before the webview loads: on a cold start iOS delivers the tap to the delegate
+    // present when launching finishes.
+    previousNotificationDelegate = UNUserNotificationCenter.current().delegate
+    UNUserNotificationCenter.current().delegate = self
+  }
 
   override func load(webview: WKWebView) {
     if FirebaseApp.app() == nil {
@@ -36,8 +51,6 @@ class FcmPlugin: Plugin, MessagingDelegate, UNUserNotificationCenterDelegate {
     }
 
     Messaging.messaging().delegate = self
-    previousNotificationDelegate = UNUserNotificationCenter.current().delegate
-    UNUserNotificationCenter.current().delegate = self
 
     AppDelegateSwizzler.plugin = self
     AppDelegateSwizzler.swizzlePushCallbacks()
@@ -146,6 +159,14 @@ class FcmPlugin: Plugin, MessagingDelegate, UNUserNotificationCenterDelegate {
     }
   }
 
+  @objc public func takeOpenedNotification(_ invoke: Invoke) throws {
+    DispatchQueue.main.async { [weak self] in
+      let data = self?.openedNotification
+      self?.openedNotification = nil
+      invoke.resolve(OpenedNotification(data: data))
+    }
+  }
+
   @objc public func createChannel(_ invoke: Invoke) throws {
     let _ = try invoke.parseArgs(CreateChannelArgs.self)
     invoke.resolve()
@@ -191,6 +212,18 @@ class FcmPlugin: Plugin, MessagingDelegate, UNUserNotificationCenterDelegate {
     didReceive response: UNNotificationResponse,
     withCompletionHandler completionHandler: @escaping () -> Void
   ) {
+    if response.actionIdentifier == UNNotificationDefaultActionIdentifier {
+      // The FCM `data` fields sit beside `aps` and Firebase's own keys in `userInfo`.
+      var data = [String: String]()
+      for (key, value) in response.notification.request.content.userInfo {
+        guard let key = key as? String, let value = value as? String,
+              key != "aps", !key.hasPrefix("gcm."), !key.hasPrefix("google.") else { continue }
+        data[key] = value
+      }
+      openedNotification = data
+      trigger("notification-opened", data: [:])
+    }
+
     if let previous = previousNotificationDelegate,
        previous.responds(to: #selector(UNUserNotificationCenterDelegate.userNotificationCenter(_:didReceive:withCompletionHandler:))) {
       previous.userNotificationCenter?(center, didReceive: response, withCompletionHandler: completionHandler)

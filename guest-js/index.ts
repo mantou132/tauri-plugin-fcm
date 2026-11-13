@@ -135,6 +135,34 @@ export async function onPushError(
 }
 
 /**
+ * Registers a listener fired when the user taps a notification; call
+ * {@link takeOpenedNotification} to get its data.
+ * @param handler - Callback function invoked on each tap
+ * @returns Promise resolving to a PluginListener that can be used to unlisten
+ */
+export async function onNotificationOpened(
+  handler: () => void,
+): Promise<PluginListener> {
+  return await addPluginListener("fcm", "notification-opened", handler);
+}
+
+/**
+ * Takes the `data` of the last tapped notification, or `null` when none was
+ * tapped since the last take. A tap that cold-started the app is kept until
+ * taken, so call it once on startup as well as on {@link onNotificationOpened}.
+ * @returns Promise resolving to the message `data` fields
+ */
+export async function takeOpenedNotification(): Promise<Record<
+  string,
+  string
+> | null> {
+  const { data } = await invoke<{ data?: Record<string, string> }>(
+    "plugin:fcm|take_opened_notification",
+  );
+  return data ?? null;
+}
+
+/**
  * Creates a notification channel (Android only, no-op on iOS).
  * @param options - Channel configuration options
  * @returns Promise that resolves when channel creation is complete

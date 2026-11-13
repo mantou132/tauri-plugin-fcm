@@ -69,11 +69,13 @@ import {
   createChannel,
   deleteToken,
   getToken,
+  onNotificationOpened,
   onPushError,
   onTokenRefresh,
   register,
   requestPermissions,
   sendNotification,
+  takeOpenedNotification,
 } from "tauri-plugin-fcm";
 ```
 
@@ -88,6 +90,8 @@ import {
 - `sendNotification(options: SendNotificationOptions): Promise<void>`
 - `onTokenRefresh(handler): Promise<PluginListener>`
 - `onPushError(handler): Promise<PluginListener>`
+- `onNotificationOpened(handler): Promise<PluginListener>` — fired when the user taps a notification
+- `takeOpenedNotification(): Promise<Record<string, string> | null>` — the tapped notification's `data`, taken once; a tap that cold-started the app waits here until taken
 
 `PermissionState` comes from `@tauri-apps/api/core` and can be:
 

@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.webkit.WebView
@@ -55,9 +56,47 @@ class FcmPlugin(private val activity: Activity) : Plugin(activity) {
 
     private val notificationIdCounter = AtomicInteger(0)
 
+    /** Data of the last tapped notification, kept until JS takes it. */
+    private var openedNotification: JSObject? = null
+
     override fun load(webView: WebView) {
         super.load(webView)
         instance = this
+        // Cold start: the tap launched the activity before JS could listen.
+        // A launch from recents replays the original intent, which was already handled.
+        if ((activity.intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) == 0) {
+            receiveNotificationTap(activity.intent)
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        receiveNotificationTap(intent)
+    }
+
+    /**
+     * FCM shows notification messages itself while the app is in the background; tapping one
+     * starts the launcher activity with the message `data` as string extras.
+     */
+    private fun receiveNotificationTap(intent: Intent) {
+        val extras = intent.extras ?: return
+        if (!extras.containsKey("google.message_id")) return
+        val data = JSObject()
+        for (key in extras.keySet()) {
+            if (key.startsWith("google.") || key.startsWith("gcm.") || key == "from" || key == "collapse_key") continue
+            extras.getString(key)?.let { data.put(key, it) }
+        }
+        // A recreated activity gets the same intent again.
+        intent.removeExtra("google.message_id")
+        openedNotification = data
+        trigger("notification-opened", JSObject())
+    }
+
+    @Command
+    fun takeOpenedNotification(invoke: Invoke) {
+        val ret = JSObject()
+        ret.put("data", openedNotification)
+        openedNotification = null
+        invoke.resolve(ret)
     }
 
     private fun permissionStatus(value: String): JSObject {

@@ -1,7 +1,9 @@
 use tauri::{AppHandle, Manager, Runtime};
 
 use crate::mobile as platform;
-use crate::models::{CreateChannelArgs, FcmToken, PermissionStatus, SendNotificationArgs};
+use crate::models::{
+    CreateChannelArgs, FcmToken, OpenedNotification, PermissionStatus, SendNotificationArgs,
+};
 
 #[tauri::command]
 pub async fn get_token<R: Runtime>(app: AppHandle<R>) -> crate::Result<FcmToken> {
@@ -46,4 +48,13 @@ pub async fn send_notification<R: Runtime>(
     app.state::<platform::Fcm<R>>()
         .inner()
         .send_notification(args)
+}
+
+#[tauri::command]
+pub async fn take_opened_notification<R: Runtime>(
+    app: AppHandle<R>,
+) -> crate::Result<OpenedNotification> {
+    app.state::<platform::Fcm<R>>()
+        .inner()
+        .take_opened_notification()
 }

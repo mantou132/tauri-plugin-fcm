@@ -1,5 +1,12 @@
 use serde::{Deserialize, Serialize};
 
+/// The last tapped notification, taken once by JS.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OpenedNotification {
+    /// The message `data`; absent when nothing was tapped since the last take.
+    pub data: Option<std::collections::HashMap<String, String>>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FcmToken {
     pub token: String,

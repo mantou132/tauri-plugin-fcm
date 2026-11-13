@@ -3,7 +3,9 @@ use tauri::{
     AppHandle, Runtime,
 };
 
-use crate::models::{CreateChannelArgs, FcmToken, PermissionStatus, SendNotificationArgs};
+use crate::models::{
+    CreateChannelArgs, FcmToken, OpenedNotification, PermissionStatus, SendNotificationArgs,
+};
 
 #[cfg(target_os = "android")]
 const PLUGIN_IDENTIFIER: &str = "com.plugin.fcm";
@@ -49,6 +51,12 @@ impl<R: Runtime> Fcm<R> {
     pub fn send_notification(&self, args: SendNotificationArgs) -> crate::Result<()> {
         self.0
             .run_mobile_plugin("sendNotification", args)
+            .map_err(Into::into)
+    }
+
+    pub fn take_opened_notification(&self) -> crate::Result<OpenedNotification> {
+        self.0
+            .run_mobile_plugin("takeOpenedNotification", ())
             .map_err(Into::into)
     }
 }

@@ -11,6 +11,7 @@ Default permissions for the FCM plugin
 - `allow-delete-token`
 - `allow-create-channel`
 - `allow-send-notification`
+- `allow-take-opened-notification`
 - `allow-register-listener`
 - `allow-remove-listener`
 
@@ -253,6 +254,32 @@ Enables the send_notification command without any pre-configured scope.
 <td>
 
 Denies the send_notification command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`fcm:allow-take-opened-notification`
+
+</td>
+<td>
+
+Enables the take_opened_notification command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`fcm:deny-take-opened-notification`
+
+</td>
+<td>
+
+Denies the take_opened_notification command without any pre-configured scope.
 
 </td>
 </tr>
