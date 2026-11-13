@@ -93,6 +93,8 @@ import {
 - `onNotificationOpened(handler): Promise<PluginListener>` — fired when the user taps a notification
 - `takeOpenedNotification(): Promise<Record<string, string> | null>` — the tapped notification's `data`, taken once; a tap that cold-started the app waits here until taken
 
+On iOS a tap also posts `FcmNotificationOpened` to `NotificationCenter.default`, for native code of the app (on Android the activity gets the tap's intent itself).
+
 `PermissionState` comes from `@tauri-apps/api/core` and can be:
 
 - `granted`

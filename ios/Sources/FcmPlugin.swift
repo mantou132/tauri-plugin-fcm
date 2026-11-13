@@ -222,6 +222,8 @@ class FcmPlugin: Plugin, MessagingDelegate, UNUserNotificationCenterDelegate {
       }
       openedNotification = data
       trigger("notification-opened", data: [:])
+      // For native code of the host app, e.g. to bring back the page that listens for the event.
+      NotificationCenter.default.post(name: Notification.Name("FcmNotificationOpened"), object: nil)
     }
 
     if let previous = previousNotificationDelegate,
